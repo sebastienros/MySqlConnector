@@ -4,7 +4,7 @@ using MySql.Data.MySqlClient;
 using Dapper;
 using Xunit;
 
-namespace SideBySide.New
+namespace SideBySide
 {
 	public class InsertTests : IClassFixture<DatabaseFixture>
 	{
@@ -149,6 +149,18 @@ create table insert_mysql_set(
 );");
 			m_database.Connection.Execute(@"insert into insert_mysql_set(value) values('one'), ('two'), ('one,two'), ('four'), ('four,one'), ('four,two'), ('four,two,one'), ('eight');");
 			Assert.Equal(new[] { "one", "one,two", "one,four", "one,two,four" }, m_database.Connection.Query<string>(@"select value from insert_mysql_set where find_in_set('one', value) order by rowid"));
+		}
+
+		[Fact]
+		public void InsertUtf8()
+		{
+			m_database.Connection.Execute(@"drop table if exists insert_utf8;
+create table insert_utf8(
+	rowid integer not null primary key auto_increment,
+	value mediumtext character set 'utf8' collate 'utf8_general_ci'
+);");
+			m_database.Connection.Execute(@"insert into insert_utf8(value) values('ŻŹŶŴŲŰŮŬŪŨŦŤŢŠŞŜŚŘŖŔŐŎŌŊŇŅŃŁĿĽĻĹĶĴĮĬĪĨĦĤĢĠĞĜĚĘĖĔĒĐĎČĊĈĆĄĂĀŸÝÜÛÚÙØÖÕÔÓÒÑÏÎÍÌËÊÉÈÇÅÄÃÂ');");
+			Assert.Equal(new[] { "ŻŹŶŴŲŰŮŬŪŨŦŤŢŠŞŜŚŘŖŔŐŎŌŊŇŅŃŁĿĽĻĹĶĴĮĬĪĨĦĤĢĠĞĜĚĘĖĔĒĐĎČĊĈĆĄĂĀŸÝÜÛÚÙØÖÕÔÓÒÑÏÎÍÌËÊÉÈÇÅÄÃÂ" }, m_database.Connection.Query<string>(@"select value from insert_utf8 order by rowid"));
 		}
 
 		readonly DatabaseFixture m_database;
